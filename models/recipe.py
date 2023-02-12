@@ -25,23 +25,4 @@ class Recipe(db.Model):
     updated_at = db.Column(db.DateTime(), nullable=False, 
         server_default=db.func.now(), onupdate=db.func.now())
 
-    user_id = db.Column(db.Integer(), db.ForeignKey("user.id"))def __init__(self, name, description, num_of_servings, 
-        cook_time, directions):
-        self.id = get_last_id() 
-        self.name = name 
-        self.description = description
-        self.num_of_servings = num_of_servings 
-        self.cook_time = cook_time 
-        self.directions = directions 
-        self.is_publish = False 
-
-    @property 
-    def data(self):
-        return {
-            'id': self.id, 
-            'name': self.name,
-            'description': self.description,
-            'num_of_servings': self.num_of_servings,
-            'cook_time': self.cook_time,
-            'directions': self.directions,
-        }
+    user_id = db.Column(db.Integer(), db.ForeignKey("user.id"))
