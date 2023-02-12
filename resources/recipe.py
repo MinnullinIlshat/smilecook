@@ -45,7 +45,7 @@ class RecipeResource(Resource):
         data = request.get_json()
 
         recipe = next((recipe for recipe in recipe_list if \
-            recipe['id'] == recipe_id), None)
+            recipe.id == recipe_id), None)
         
         if recipe is None:
             return {'message': 'recipe not found'}, HTTPStatus.NOT_FOUND
@@ -58,12 +58,23 @@ class RecipeResource(Resource):
 
         return recipe.data, HTTPStatus.OK
 
+    def delete(self, recipe_id):
+        recipe = next((recipe for recipe in recipe_list if \
+            recipe.id == recipe_id), None)
+
+        if not recipe:
+            return {"message": "recipe not found"}, HTTPStatus.NOT_FOUND
+
+        recipe_list.remove(recipe)
+
+        return {}, HTTPStatus.NO_CONTENT
+
 
 class RecipePublishResource(Resource):
 
     def put(self, recipe_id):
         recipe = next((recipe for recipe in recipe_list if \
-            recipe['id'] == recipe_id), None)
+            recipe.id == recipe_id), None)
 
         if recipe is None:
             return {"message": "recipe not found"}, HTTPStatus.NOT_FOUND
@@ -74,7 +85,7 @@ class RecipePublishResource(Resource):
     
     def delete(self, recipe_id):
         recipe = next((recipe for recipe in recipe_list if \
-            recipe['id'] == recipe_id), None)
+            recipe.id == recipe_id), None)
 
         if recipe is None:
             return {"message": "recipe not found"}, HTTPStatus.NOT_FOUND
