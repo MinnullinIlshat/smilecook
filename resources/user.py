@@ -1,5 +1,6 @@
 from flask import request 
 from flask_restful import Resource 
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from http import HTTPStatus 
 
 from utils import hash_password 
@@ -37,3 +38,29 @@ class UserListResource(Resource):
         }
 
         return data, HTTPStatus.CREATED
+    
+
+class UserResource(Resource):
+    @jwt_required(optional=True)
+    def get(self, username):
+        user = User.get_by_username(username=username)
+
+        if user is None:
+            return {"message": "user not found"}, HTTPStatus.NOT_FOUND
+        
+        current_user = get_jwt_identity()
+
+        if current_user == user.id:
+            data = {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+            }
+        
+        else: 
+            data = {
+                'id': user.id,
+                'username': user.username,
+            }
+        
+        return data, HTTPStatus.OK
