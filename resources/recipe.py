@@ -4,6 +4,10 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from http import HTTPStatus 
 
 from models.recipe import Recipe
+from schemas.recipe import RecipeSchema
+
+recipe_schema = RecipeSchema()
+recipe_list_schema = RecipeSchema(many=True)
 
 
 class RecipeListResource(Resource):
@@ -11,24 +15,21 @@ class RecipeListResource(Resource):
         
         recipes = Recipe.get_all_published()
 
-        data = [recipe.data() for recipe in recipes]
-
-        return {'data': data}, HTTPStatus.OK
+        return recipe_list_schema.dump(recipes), HTTPStatus.OK
 
     @jwt_required(optional=False)
     def post(self):
         json_data = request.get_json()
         current_user = get_jwt_identity()
-        recipe = Recipe(name=json_data['name'],
-                        description=json_data['description'],
-                        num_of_servings=json_data['num_of_servings'],
-                        cook_time=json_data['cook_time'],
-                        directions=json_data['directions'],
-                        user_id=current_user)
+        data, *errors = recipe_schema.load(data=json_data)
+        if errors:
+            return {"message": "Validation errors", 'errors': errors}, HTTPStatus.BAD_REQUEST
         
+        recipe = Recipe(**data)
+        recipe.user_id = current_user
         recipe.save()
 
-        return recipe.data(), HTTPStatus.CREATED
+        return recipe_schema.dump(recipe), HTTPStatus.CREATED
 
 
 class RecipeResource(Resource):
