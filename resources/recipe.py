@@ -1,6 +1,7 @@
 from flask import request 
 from flask_restful import Resource
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from marshmallow import ValidationError
 from http import HTTPStatus 
 
 from models.recipe import Recipe
@@ -21,9 +22,11 @@ class RecipeListResource(Resource):
     def post(self):
         json_data = request.get_json()
         current_user = get_jwt_identity()
-        data, *errors = recipe_schema.load(data=json_data)
-        if errors:
-            return {"message": "Validation errors", 'errors': errors}, HTTPStatus.BAD_REQUEST
+
+        try:
+            data = recipe_schema.load(data=json_data)
+        except ValidationError as err:
+            return {"message": "Validation errors", 'errors': err.messages}, HTTPStatus.BAD_REQUEST
         
         recipe = Recipe(**data)
         recipe.user_id = current_user
