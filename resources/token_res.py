@@ -1,3 +1,4 @@
+import redis
 from http import HTTPStatus 
 from flask import request 
 from flask_restful import Resource 
@@ -10,9 +11,12 @@ from flask_jwt_extended import (
 )
 
 from utils import check_password 
-from models.user import User 
+from models.user import User
+from config import ACCESS_EXPIRES
 
-black_list = set()
+jwt_redis_blocklist = redis.StrictRedis(
+    host="localhost", port=6379, db=0, decode_responses=True
+)
 
 class TokenResource(Resource):
     def post(self):
@@ -41,10 +45,10 @@ class RefreshResource(Resource):
     
 
 class RevokeResource(Resource):
-    @jwt_required(optional=False)
+    @jwt_required(verify_type=False)
     def post(self):
-        jti = get_jwt()['jti']
-
-        black_list.add(jti)
-
-        return {"message": "Successfully logged out"}, HTTPStatus.OK
+        token = get_jwt()
+        jti = token['jti']
+        ttype = token["type"]
+        jwt_redis_blocklist.set(jti, "", ex=ACCESS_EXPIRES)
+        return {"message": f"{ttype.capitalize()} token successfully revoked"}, HTTPStatus.OK

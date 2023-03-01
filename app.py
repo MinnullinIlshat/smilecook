@@ -1,3 +1,4 @@
+from datetime import timedelta
 from flask import Flask
 from flask_restful import Api
 from flask_migrate import Migrate
@@ -6,7 +7,7 @@ from config import Config
 from extensions import db, jwt
 from resources.user import UserListResource, UserResource, MeResource
 from resources.recipe import RecipeListResource, RecipeResource, RecipePublishResource
-from resources.token_res import TokenResource, RefreshResource, RevokeResource, black_list
+from resources.token_res import TokenResource, RefreshResource, RevokeResource, jwt_redis_blocklist
 
 
 def create_app():
@@ -27,7 +28,8 @@ def register_extensions(app):
     @jwt.token_in_blocklist_loader
     def check_if_token_is_revoked(jwt_header, jwt_payload: dict):
         jti = jwt_payload['jti']
-        return jti in black_list
+        token_in_redis = jwt_redis_blocklist.get(jti)
+        return token_in_redis is not None
 
 def register_resources(app):
     api = Api(app)

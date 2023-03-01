@@ -48,7 +48,7 @@ class RecipeResource(Resource):
         if not recipe.is_publish and recipe.user_id != current_user:
             return {"message": 'Access is not allowed'}, HTTPStatus.FORBIDDEN
         
-        return recipe.data(), HTTPStatus.OK 
+        return recipe_schema.dump(recipe), HTTPStatus.OK 
 
     @jwt_required(optional=False)
     def put(self, recipe_id):

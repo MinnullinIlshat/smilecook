@@ -1,3 +1,7 @@
+from datetime import timedelta
+
+ACCESS_EXPIRES = timedelta(hours=1)
+
 class Config:
     DEBUG = True 
     
@@ -6,3 +10,4 @@ class Config:
 
     SECRET_KEY = 'super-secret-key'
     JWT_ERROR_MESSAGE_KEY = 'message'
+    JWT_ACCESS_TOKEN_EXPIRES = ACCESS_EXPIRES
