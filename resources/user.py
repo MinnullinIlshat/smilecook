@@ -4,11 +4,18 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from marshmallow import ValidationError
 from http import HTTPStatus 
 
-from models.user import User 
+from webargs import fields 
+from webargs.flaskparser import use_kwargs
+
+from models.user import User
+from models.recipe import Recipe 
+
 from schemas.user import UserSchema 
+from schemas.recipe import RecipeSchema 
 
 user_schema = UserSchema()
 user_public_schema = UserSchema(exclude=('email',))
+recipe_list_schema = RecipeSchema(many=True)
 
 
 class UserListResource(Resource):
@@ -55,3 +62,10 @@ class MeResource(Resource):
     def get(self):
         user = User.get_by_id(id=get_jwt_identity())
         return user_schema.dump(user), HTTPStatus.OK
+    
+
+class UserRecipeListResource(Resource):
+    @jwt_required(optional=True)
+    @use_kwargs({'visibility': fields.Str(missing='public')})
+    def get(self, username, visibility):
+        pass
