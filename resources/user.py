@@ -1,4 +1,4 @@
-from flask import request 
+from flask import request, url_for
 from flask_restful import Resource 
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from marshmallow import ValidationError
@@ -10,6 +10,9 @@ from webargs.flaskparser import use_kwargs
 from models.user import User
 from models.recipe import Recipe 
 
+from mailgun import MailgunApi
+from utils import generate_token, verify_token
+
 from schemas.user import UserSchema 
 from schemas.recipe import RecipeSchema 
 
@@ -17,6 +20,8 @@ user_schema = UserSchema()
 user_public_schema = UserSchema(exclude=('email',))
 recipe_list_schema = RecipeSchema(many=True)
 
+mailgun = MailgunApi(domain='sandbox2d9b7c287df94e25b2eca7aa0afddae1.mailgun.org',
+                     api_key='53f31d1dda35940d2006a9efa71f81a6-15b35dee-c0fbbb20')
 
 class UserListResource(Resource):
     def post(self):
@@ -34,6 +39,14 @@ class UserListResource(Resource):
             return {"message": "email already used"}, HTTPStatus.BAD_REQUEST
         
         user = User(**data)
+        token = generate_token(user.email, salt='activate')
+        subject = 'Please confirm your registration.'
+        link = url_for('useractivateresource',
+                       token=token, 
+                       _external=True)
+        text = f'Hi, Thanks for using SmileCook! Please confirm your\
+            registration by clicking on the link: {link}'
+        mailgun.send_email(to=user.email, subject=subject, text=text)
         user.save() 
 
         return user_schema.dump(user), HTTPStatus.CREATED
@@ -68,4 +81,23 @@ class UserRecipeListResource(Resource):
     @jwt_required(optional=True)
     @use_kwargs({'visibility': fields.Str(missing='public')})
     def get(self, username, visibility):
-        pass
+        user = User.get_by_username(username=username)
+
+        if user is None:
+            return {"message": "User not found"}, HTTPStatus.NOT_FOUND 
+        
+        current_user = get_jwt_identity()
+
+        if current_user != user.id and visibility in ['all', 'private']:
+            visibility = 'public'
+
+        recipes = Recipe.get_all_by_user(user_id=user.id, visibility=visibility)
+
+        return recipe_list_schema.dump(recipes), HTTPStatus.OK
+    
+class UserActivateResource(Resource):
+    def get(self, token):
+        email = verify_token(token, salt='activate')
+
+        if email is False:
+            return {"message": "Invalid token or token expired"}, HTTPStatus.BAD_REQUEST

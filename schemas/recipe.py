@@ -35,7 +35,7 @@ class RecipeSchema(Schema):
             raise ValidationError('Cook time must not be greater than 300.')
         
     author = fields.Nested(UserSchema, attribute='user', dump_only=True,
-                           only=['id', 'username'])
+                           exclude=("email",))
 
     @post_dump(pass_many=True)
     def wrap(self, data, many, **kwargs):

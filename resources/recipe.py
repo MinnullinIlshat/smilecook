@@ -13,9 +13,7 @@ recipe_list_schema = RecipeSchema(many=True)
 
 class RecipeListResource(Resource):
     def get(self):
-        
         recipes = Recipe.get_all_published()
-
         return recipe_list_schema.dump(recipes), HTTPStatus.OK
 
     @jwt_required()
