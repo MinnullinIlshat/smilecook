@@ -4,7 +4,7 @@ from flask_migrate import Migrate
 
 from config import Config
 from extensions import db, jwt
-from resources.user import UserListResource, UserResource, MeResource, UserRecipeListResource
+from resources.user import UserListResource, UserResource, MeResource, UserRecipeListResource, UserActivateResource
 from resources.recipe import RecipeListResource, RecipeResource, RecipePublishResource
 from resources.token_res import TokenResource, RefreshResource, RevokeResource, jwt_redis_blocklist
 
@@ -37,6 +37,7 @@ def register_resources(app):
     api.add_resource(UserListResource, '/users')
     api.add_resource(UserResource, '/users/<string:username>')
     api.add_resource(UserRecipeListResource, '/users/<string:username>/recipes')
+    api.add_resource(UserActivateResource, '/users/activate/<string:token>')
 
     api.add_resource(TokenResource, '/token')
     api.add_resource(RefreshResource, '/refresh')

@@ -101,3 +101,15 @@ class UserActivateResource(Resource):
 
         if email is False:
             return {"message": "Invalid token or token expired"}, HTTPStatus.BAD_REQUEST
+        
+        user = User.get_by_email(email=email)
+        
+        if not user:
+            return {"message": "User not found."}, HTTPStatus.NOT_FOUND
+        
+        if user.is_active is True:
+            return {"message": "The user account is already activated."}, HTTPStatus.BAD_REQUEST
+        
+        user.is_active = True 
+        user.save()
+        return {}, HTTPStatus.NO_CONTENT

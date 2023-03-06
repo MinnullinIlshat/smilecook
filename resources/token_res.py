@@ -25,7 +25,9 @@ class TokenResource(Resource):
         password = json_data.get('password')
         user = User.get_by_email(email=email)
         if not user or not check_password(password, user.password):
-            return {"message": "email or password is incorrect"}, HTTPStatus.UNAUTHORIZED 
+            return {"message": "email or password is incorrect"}, HTTPStatus.UNAUTHORIZED
+        if not user.is_active:
+            return {"message": "The user account is not activated yet"}, HTTPStatus.FORBIDDEN
         
         access_token = create_access_token(identity=user.id, fresh=True)
         refresh_token = create_refresh_token(identity=user.id)
