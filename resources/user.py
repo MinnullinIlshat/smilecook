@@ -1,6 +1,9 @@
-from flask import request, url_for
+import os 
+import uuid
+from flask import request, url_for, current_app
 from flask_restful import Resource 
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from werkzeug.utils import secure_filename
 from marshmallow import ValidationError
 from http import HTTPStatus 
 
@@ -11,13 +14,14 @@ from models.user import User
 from models.recipe import Recipe 
 
 from mailgun import MailgunApi
-from utils import generate_token, verify_token
+from utils import generate_token, verify_token, allowed_file
 
 from schemas.user import UserSchema 
 from schemas.recipe import RecipeSchema 
 
 user_schema = UserSchema()
 user_public_schema = UserSchema(exclude=('email',))
+user_avatar_schema = UserSchema(only=('avatar_url',))
 recipe_list_schema = RecipeSchema(many=True)
 
 mailgun = MailgunApi(domain='sandbox2d9b7c287df94e25b2eca7aa0afddae1.mailgun.org',
@@ -113,3 +117,36 @@ class UserActivateResource(Resource):
         user.is_active = True 
         user.save()
         return {}, HTTPStatus.NO_CONTENT
+    
+
+class UserAvatarUploadResource(Resource):
+    @jwt_required()
+    def put(self):
+        file = request.files.get('avatar')
+        if not file:
+            return {"message": "Not a valid iamge"}, HTTPStatus.BAD_REQUEST
+        
+        if not allowed_file(filename=file.filename):
+            return {"message": "File type not allowed"}, HTTPStatus.BAD_REQUEST
+        
+        user = User.get_by_id(id=get_jwt_identity())
+
+        if user.avatar_image:
+            avatar_path = os.path.join(
+                current_app.config['UPLOADED_IMAGES_DEST'], 
+                f"avatars/{user.avatar_image}")
+            if os.path.exists(avatar_path):
+                os.remove(avatar_path)
+                
+        filename = secure_filename(file.filename)
+        extension = filename.rsplit('.', 1)[1].lower()
+        filename = f'{uuid.uuid4()}.{extension}'
+        
+        file.save(os.path.join(
+            current_app.config['UPLOADED_IMAGES_DEST'], 
+            f"avatars/{filename}"))
+        
+        user.avatar_image = filename 
+        user.save() 
+        
+        return user_avatar_schema.dump(user), HTTPStatus.OK

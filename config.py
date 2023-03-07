@@ -11,3 +11,6 @@ class Config:
     SECRET_KEY = 'super-secret-key'
     JWT_ERROR_MESSAGE_KEY = 'message'
     JWT_ACCESS_TOKEN_EXPIRES = ACCESS_EXPIRES
+    
+    UPLOADED_IMAGES_DEST = 'static/images'
+    MAX_CONTENT_LENGTH = 10 * 1024 * 1024

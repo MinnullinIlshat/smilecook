@@ -2,6 +2,7 @@ from passlib.hash import pbkdf2_sha256
 from itsdangerous import URLSafeTimedSerializer
 from flask import current_app
 
+
 def hash_password(password):
     return pbkdf2_sha256.hash(password)
 
@@ -19,3 +20,8 @@ def verify_token(token, max_age=(30 * 60), salt=None):
     except:
         return False
     return email
+
+def allowed_file(filename):
+    allowed_extensions = ['png', 'jpg', 'jpeg', 'gif']
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in allowed_extensions
