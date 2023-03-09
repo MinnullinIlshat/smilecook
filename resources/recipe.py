@@ -1,14 +1,19 @@
-from flask import request 
+import os, uuid
+
+from flask import request, current_app
 from flask_restful import Resource
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from marshmallow import ValidationError
+from werkzeug.utils import secure_filename
 from http import HTTPStatus 
 
 from models.recipe import Recipe
 from schemas.recipe import RecipeSchema
+from utils import allowed_file, compress_image
 
 recipe_schema = RecipeSchema()
 recipe_list_schema = RecipeSchema(many=True)
+recipe_cover_schema = RecipeSchema(only=("cover_url",))
 
 
 class RecipeListResource(Resource):
@@ -124,3 +129,40 @@ class RecipePublishResource(Resource):
         recipe.save()
 
         return {}, HTTPStatus.NO_CONTENT
+    
+    
+class RecipeCoverUploadResource(Resource):
+    @jwt_required() 
+    def put(self, recipe_id):
+        file = request.files.get('cover')
+        if not file:
+            return {"message": "File not found"}, HTTPStatus.BAD_REQUEST
+        if not allowed_file(file.filename):
+            return {"message": "Incorrect file type."}, HTTPStatus.BAD_REQUEST 
+        
+        folder = current_app.config["UPLOADED_IMAGES_DEST"] + '/recipes'
+        recipe = Recipe.get_by_id(recipe_id=recipe_id)
+        
+        if recipe is None:
+            return {"message": "Recipe is not found"}, HTTPStatus.BAD_REQUEST
+        
+        current_user = get_jwt_identity()
+        
+        if current_user != recipe.user_id:
+            return {"message": "Access is not allowed"}, HTTPStatus.BAD_REQUEST
+        
+        if recipe.cover_image:
+            cover_path = os.path.join(folder, recipe.cover_image)
+            if os.path.exists(cover_path):
+                os.remove(cover_path)
+        
+        extension = secure_filename(file.filename).rsplit('.', 1)[1]
+        filename = f"{uuid.uuid4()}.{extension}"
+    
+        file.save(os.path.join(folder, filename))
+        filename = compress_image(filename, folder)
+        
+        recipe.cover_image = filename
+        recipe.save() 
+        
+        return recipe_cover_schema.dump(recipe), HTTPStatus.OK

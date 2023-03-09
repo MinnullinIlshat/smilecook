@@ -17,6 +17,7 @@ class Recipe(db.Model):
         server_default=db.func.now(), onupdate=db.func.now())
 
     user_id = db.Column(db.Integer(), db.ForeignKey("user.id"))
+    cover_image = db.Column(db.String(100), default=None)
     
     @classmethod 
     def get_all_published(cls):
