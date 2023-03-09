@@ -14,7 +14,7 @@ from models.user import User
 from models.recipe import Recipe 
 
 from mailgun import MailgunApi
-from utils import generate_token, verify_token, allowed_file
+from utils import generate_token, verify_token, allowed_file, compress_image
 
 from schemas.user import UserSchema 
 from schemas.recipe import RecipeSchema 
@@ -145,6 +145,9 @@ class UserAvatarUploadResource(Resource):
         file.save(os.path.join(
             current_app.config['UPLOADED_IMAGES_DEST'], 
             f"avatars/{filename}"))
+        
+        filename = compress_image(filename, 
+            current_app.config['UPLOADED_IMAGES_DEST'] + "/avatars")
         
         user.avatar_image = filename 
         user.save() 
