@@ -33,6 +33,6 @@ class PaginationSchema(Schema):
             pagination_links['prev'] = self.get_url(page=paginated_objects.prev_num)
             
         if paginated_objects.has_next:
-            paginated_objects['next'] = self.get_url(page=paginated_objects.next_num)
+            pagination_links['next'] = self.get_url(page=paginated_objects.next_num)
             
         return pagination_links

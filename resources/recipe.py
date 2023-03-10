@@ -5,21 +5,27 @@ from flask_restful import Resource
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from marshmallow import ValidationError
 from werkzeug.utils import secure_filename
-from http import HTTPStatus 
+from http import HTTPStatus
+from webargs import fields
+from webargs.flaskparser import use_kwargs
 
 from models.recipe import Recipe
-from schemas.recipe import RecipeSchema
+from schemas.recipe import RecipeSchema, RecipePaginationSchema
 from utils import allowed_file, compress_image
 
 recipe_schema = RecipeSchema()
 recipe_list_schema = RecipeSchema(many=True)
 recipe_cover_schema = RecipeSchema(only=("cover_url",))
+recipe_pagination_schema = RecipePaginationSchema()
 
 
 class RecipeListResource(Resource):
-    def get(self):
-        recipes = Recipe.get_all_published()
-        return recipe_list_schema.dump(recipes), HTTPStatus.OK
+    def get(self, page=1, per_page=20):
+        args = request.args.to_dict()
+        per_page = int(args.get('per_page') or per_page)
+        page = int(args.get('page') or page)
+        paginated_recipes = Recipe.get_all_published(page, per_page)
+        return recipe_pagination_schema.dump(paginated_recipes), HTTPStatus.OK
 
     @jwt_required()
     def post(self):
