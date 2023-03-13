@@ -6,8 +6,6 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from marshmallow import ValidationError
 from werkzeug.utils import secure_filename
 from http import HTTPStatus
-from webargs import fields
-from webargs.flaskparser import use_kwargs
 
 from models.recipe import Recipe
 from schemas.recipe import RecipeSchema, RecipePaginationSchema
@@ -20,11 +18,14 @@ recipe_pagination_schema = RecipePaginationSchema()
 
 
 class RecipeListResource(Resource):
-    def get(self, page=1, per_page=20):
+    def get(self):
         args = request.args.to_dict()
-        per_page = int(args.get('per_page') or per_page)
-        page = int(args.get('page') or page)
-        paginated_recipes = Recipe.get_all_published(page, per_page)
+        
+        per_page = int(args.get('per_page') or 20)
+        page = int(args.get('page') or 1)
+        q = args.get('q') or ''
+        
+        paginated_recipes = Recipe.get_all_published(q, page, per_page)
         return recipe_pagination_schema.dump(paginated_recipes), HTTPStatus.OK
 
     @jwt_required()

@@ -7,9 +7,6 @@ from werkzeug.utils import secure_filename
 from marshmallow import ValidationError
 from http import HTTPStatus 
 
-from webargs import fields 
-from webargs.flaskparser import use_kwargs
-
 from models.user import User
 from models.recipe import Recipe 
 
@@ -17,12 +14,12 @@ from mailgun import MailgunApi
 from utils import generate_token, verify_token, allowed_file, compress_image
 
 from schemas.user import UserSchema 
-from schemas.recipe import RecipeSchema 
+from schemas.recipe import RecipeSchema, RecipePaginationSchema
 
 user_schema = UserSchema()
 user_public_schema = UserSchema(exclude=('email',))
 user_avatar_schema = UserSchema(only=('avatar_url',))
-recipe_list_schema = RecipeSchema(many=True)
+recipe_pagination_schema = RecipePaginationSchema()
 
 mailgun = MailgunApi(domain='sandbox2d9b7c287df94e25b2eca7aa0afddae1.mailgun.org',
                      api_key='53f31d1dda35940d2006a9efa71f81a6-15b35dee-c0fbbb20')
@@ -83,8 +80,12 @@ class MeResource(Resource):
 
 class UserRecipeListResource(Resource):
     @jwt_required(optional=True)
-    @use_kwargs({'visibility': fields.Str(missing='public')})
-    def get(self, username, visibility):
+    def get(self, username, visibility='public', page=1, per_page=20):
+        args = request.args.to_dict()
+        page = int(args.get('page') or page)
+        per_page = int(args.get('per_page') or per_page)
+        visibility = args.get('visibility') or visibility
+        
         user = User.get_by_username(username=username)
 
         if user is None:
@@ -95,9 +96,10 @@ class UserRecipeListResource(Resource):
         if current_user != user.id and visibility in ['all', 'private']:
             visibility = 'public'
 
-        recipes = Recipe.get_all_by_user(user_id=user.id, visibility=visibility)
+        recipes = Recipe.get_all_by_user(user_id=user.id, visibility=visibility, 
+                                         page=page, per_page=per_page)
 
-        return recipe_list_schema.dump(recipes), HTTPStatus.OK
+        return recipe_pagination_schema.dump(recipes), HTTPStatus.OK
     
 class UserActivateResource(Resource):
     def get(self, token):

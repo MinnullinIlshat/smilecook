@@ -1,5 +1,6 @@
 from extensions import db
-from sqlalchemy import asc, desc
+from sqlalchemy import asc, desc, or_
+
 
 
 class Recipe(db.Model):
@@ -21,23 +22,29 @@ class Recipe(db.Model):
     cover_image = db.Column(db.String(100), default=None)
     
     @classmethod 
-    def get_all_published(cls, page, per_page):
-        return cls.query.filter_by(is_publish=True).order_by(desc(\
-            cls.created_at)).paginate(page=page, per_page=per_page)
+    def get_all_published(cls, q, page, per_page):
+        
+        keyword = f'%{q}%'
+        
+        return cls.query.filter(or_(cls.name.ilike(keyword),
+                cls.description.ilike(keyword)),
+                cls.is_publish.is_(True)).\
+                order_by(desc(cls.created_at)).paginate(page=page, per_page=per_page)
     
     @classmethod 
     def get_by_id(cls, recipe_id):
         return cls.query.filter_by(id=recipe_id).first()
     
     @classmethod 
-    def get_all_by_user(cls, user_id, visibility='public'):
+    def get_all_by_user(cls, user_id, visibility='public', page=1, per_page=20):
         if visibility == 'public': 
-            return cls.query.filter_by(user_id=user_id, is_publish=True).all()
+            query = cls.query.filter_by(user_id=user_id, is_publish=True)
         elif visibility == 'private': 
-            return cls.query.filter_by(user_id=user_id, is_publish=False)
+            query = cls.query.filter_by(user_id=user_id, is_publish=False)
         else:
-            return cls.query.filter_by(user_id=user_id).all()
-
+            query = cls.query.filter_by(user_id=user_id)
+        return query.order_by(desc(cls.created_at)).paginate(page=page, per_page=per_page)
+                
     def save(self):
         db.session.add(self)
         db.session.commit()
