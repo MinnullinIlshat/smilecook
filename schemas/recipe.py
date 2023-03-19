@@ -27,6 +27,7 @@ class RecipeSchema(Schema):
         
     num_of_servings = fields.Integer(validate=validate_num_of_servings)
     cook_time = fields.Integer()
+    ingredients = fields.String(required=True, validate=[validate.Length(max=600)])
 
     @validates('cook_time')
     def validate_cook_time(self, value):

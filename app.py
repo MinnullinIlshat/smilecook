@@ -3,7 +3,7 @@ from flask_restful import Api
 from flask_migrate import Migrate
 
 from config import Config
-from extensions import db, jwt
+from extensions import db, jwt, cache
 from resources.user import UserListResource, UserResource, MeResource, UserRecipeListResource, UserActivateResource, UserAvatarUploadResource
 from resources.recipe import RecipeListResource, RecipeResource, RecipePublishResource, RecipeCoverUploadResource
 from resources.token_res import TokenResource, RefreshResource, RevokeResource, jwt_redis_blocklist
@@ -22,12 +22,26 @@ def register_extensions(app):
     db.init_app(app)
     migrate = Migrate(app, db)
     jwt.init_app(app)
+    cache.init_app(app)
 
     @jwt.token_in_blocklist_loader
     def check_if_token_is_revoked(jwt_header, jwt_payload: dict):
         jti = jwt_payload['jti']
         token_in_redis = jwt_redis_blocklist.get(jti)
         return token_in_redis is not None
+    
+    @app.before_request
+    def before_request():
+        print('\n' + "BEFORE REQUEST".center(30, '=') + '\n')
+        print(cache.cache._cache.keys())
+        print('\n' + "".center(30, '=') + '\n')
+        
+    @app.after_request 
+    def after_request(response):
+        print('\n' + 'AFTER REQUEST'.center(30, '=') + '\n')
+        print(cache.cache._cache.keys())
+        print('\n', "".center(30, '=') + '\n')
+        return response 
 
 def register_resources(app):
     api = Api(app)

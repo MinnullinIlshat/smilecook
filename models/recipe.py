@@ -20,16 +20,20 @@ class Recipe(db.Model):
 
     user_id = db.Column(db.Integer(), db.ForeignKey("user.id"))
     cover_image = db.Column(db.String(100), default=None)
+    ingredients = db.Column(db.String(600))    
     
     @classmethod 
     def get_all_published(cls, q, page, per_page):
         
         keyword = f'%{q}%'
         
-        return cls.query.filter(or_(cls.name.ilike(keyword),
-                cls.description.ilike(keyword)),
-                cls.is_publish.is_(True)).\
-                order_by(desc(cls.created_at)).paginate(page=page, per_page=per_page)
+        return cls.query.filter(or_(
+            cls.name.ilike(keyword),
+            cls.description.ilike(keyword),
+            cls.ingredients.ilike(keyword)),
+            cls.is_publish.is_(True)).\
+            order_by(desc(cls.created_at)).\
+            paginate(page=page, per_page=per_page)
     
     @classmethod 
     def get_by_id(cls, recipe_id):

@@ -10,6 +10,7 @@ from http import HTTPStatus
 from models.recipe import Recipe
 from schemas.recipe import RecipeSchema, RecipePaginationSchema
 from utils import allowed_file, compress_image
+from extensions import cache
 
 recipe_schema = RecipeSchema()
 recipe_list_schema = RecipeSchema(many=True)
@@ -18,7 +19,9 @@ recipe_pagination_schema = RecipePaginationSchema()
 
 
 class RecipeListResource(Resource):
+    @cache.cached(timeout=60, query_string=True)
     def get(self):
+        print('Querying database ...')
         args = request.args.to_dict()
         
         per_page = int(args.get('per_page') or 20)
@@ -84,6 +87,7 @@ class RecipeResource(Resource):
         recipe.num_of_servings = data.get('num_of_servings') or recipe.num_of_servings
         recipe.cook_time = data.get('cook_time') or recipe.cook_time
         recipe.directions = data.get('directions') or recipe.directions
+        recipe.ingredients = data.get('ingredients') or recipe.ingredients
 
         recipe.save()
         return recipe_schema.dump(recipe), HTTPStatus.OK
