@@ -9,7 +9,7 @@ from http import HTTPStatus
 
 from models.recipe import Recipe
 from schemas.recipe import RecipeSchema, RecipePaginationSchema
-from utils import allowed_file, compress_image
+from utils import allowed_file, compress_image, clear_cache
 from extensions import cache
 
 recipe_schema = RecipeSchema()
@@ -90,6 +90,9 @@ class RecipeResource(Resource):
         recipe.ingredients = data.get('ingredients') or recipe.ingredients
 
         recipe.save()
+        
+        clear_cache('/recipes')
+        
         return recipe_schema.dump(recipe), HTTPStatus.OK
 
 
@@ -106,6 +109,8 @@ class RecipeResource(Resource):
             return {"message": "Access is not allowed"}, HTTPStatus.FORBIDDEN
         
         recipe.delete()
+        
+        clear_cache('/recipes')
 
         return {}, HTTPStatus.NO_CONTENT
 
@@ -123,6 +128,8 @@ class RecipePublishResource(Resource):
 
         recipe.is_publish = True
         recipe.save()
+        
+        clear_cache('/recipes')
 
         return {}, HTTPStatus.NO_CONTENT
     
@@ -138,6 +145,8 @@ class RecipePublishResource(Resource):
 
         recipe.is_publish = False
         recipe.save()
+        
+        clear_cache("/recipes")
 
         return {}, HTTPStatus.NO_CONTENT
     
@@ -175,5 +184,7 @@ class RecipeCoverUploadResource(Resource):
         
         recipe.cover_image = filename
         recipe.save() 
+        
+        clear_cache("/recipes")
         
         return recipe_cover_schema.dump(recipe), HTTPStatus.OK

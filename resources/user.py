@@ -11,7 +11,7 @@ from models.user import User
 from models.recipe import Recipe 
 
 from mailgun import MailgunApi
-from utils import generate_token, verify_token, allowed_file, compress_image
+from utils import generate_token, verify_token, allowed_file, compress_image, clear_cache
 
 from schemas.user import UserSchema 
 from schemas.recipe import RecipeSchema, RecipePaginationSchema
@@ -154,4 +154,6 @@ class UserAvatarUploadResource(Resource):
         user.avatar_image = filename 
         user.save() 
         
+        clear_cache("/recipes")
+                
         return user_avatar_schema.dump(user), HTTPStatus.OK
