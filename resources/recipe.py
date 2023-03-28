@@ -10,7 +10,7 @@ from http import HTTPStatus
 from models.recipe import Recipe
 from schemas.recipe import RecipeSchema, RecipePaginationSchema
 from utils import allowed_file, compress_image, clear_cache
-from extensions import cache
+from extensions import cache, limiter
 
 recipe_schema = RecipeSchema()
 recipe_list_schema = RecipeSchema(many=True)
@@ -19,6 +19,8 @@ recipe_pagination_schema = RecipePaginationSchema()
 
 
 class RecipeListResource(Resource):
+    decorators = [limiter.limit('2 per minute', methods=['GET'], error_message="Too Many Requests")]
+    
     @cache.cached(timeout=60, query_string=True)
     def get(self):
         print('Querying database ...')

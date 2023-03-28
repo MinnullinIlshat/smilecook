@@ -15,6 +15,8 @@ from utils import generate_token, verify_token, allowed_file, compress_image, cl
 
 from schemas.user import UserSchema 
 from schemas.recipe import RecipeSchema, RecipePaginationSchema
+from extensions import limiter
+
 
 user_schema = UserSchema()
 user_public_schema = UserSchema(exclude=('email',))
@@ -79,6 +81,8 @@ class MeResource(Resource):
     
 
 class UserRecipeListResource(Resource):
+    decorators = [limiter.limit('3/minute;30/hour;300/day', methods=['GET'], error_message='Too Many Requests')]
+    
     @jwt_required(optional=True)
     def get(self, username, visibility='public', page=1, per_page=20):
         args = request.args.to_dict()

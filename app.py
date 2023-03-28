@@ -1,13 +1,17 @@
-from flask import Flask
+from flask import Flask, request
 from flask_restful import Api
 from flask_migrate import Migrate
 
 from config import Config
-from extensions import db, jwt, cache
+from extensions import db, jwt, cache, limiter
 from resources.user import UserListResource, UserResource, MeResource, UserRecipeListResource, UserActivateResource, UserAvatarUploadResource
 from resources.recipe import RecipeListResource, RecipeResource, RecipePublishResource, RecipeCoverUploadResource
 from resources.token_res import TokenResource, RefreshResource, RevokeResource, jwt_redis_blocklist
 
+
+@limiter.request_filter
+def ip_whitelist():
+    return request.remote_addr == '127.0.0.1'
 
 def create_app():
     app = Flask(__name__)
@@ -23,6 +27,7 @@ def register_extensions(app):
     migrate = Migrate(app, db)
     jwt.init_app(app)
     cache.init_app(app)
+    limiter.init_app(app)
 
     @jwt.token_in_blocklist_loader
     def check_if_token_is_revoked(jwt_header, jwt_payload: dict):
